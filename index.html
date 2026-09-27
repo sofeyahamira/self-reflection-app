@@ -2,29 +2,40 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Reflect — Self-Talk Journal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Reflect - Text Yourself</title>
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
   <style>
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
+    * {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       -webkit-tap-highlight-color: transparent;
       user-select: none;
     }
-
-    .bubble-text-font {
-      font-family: 'Comfortaa', cursive, sans-serif;
-      font-size: 1.05rem;
-      line-height: 1.45;
-      letter-spacing: -0.01em;
-      color: #000000;
+    input, textarea {
+      user-select: text;
     }
 
+    /* Screen height fixing for mobile viewports */
+    .app-viewport {
+      height: 100vh;
+      height: 100dvh;
+    }
+
+    /* Safe area padding for iPhones with home bars */
+    .pb-safe {
+      padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    }
+    .pt-safe {
+      padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
+    }
+
+    /* Hide standard scrollbars for a native app feel */
     .no-scrollbar::-webkit-scrollbar {
       display: none;
     }
@@ -33,1030 +44,635 @@
       scrollbar-width: none;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
+    /* Smooth switch toggle transition */
+    .toggle-knob {
+      transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .animate-fade-in {
-      animation: fadeIn 0.22s ease-out forwards;
+    /* Responsive bubble styling */
+    .bubble-wrapper {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+      max-width: 88%;
+      min-width: 220px;
+    }
+
+    @media (min-width: 640px) {
+      .bubble-wrapper {
+        max-width: 78%;
+        min-width: 260px;
+      }
+    }
+
+    .bubble-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .bubble-content {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      text-align: center;
+      word-break: break-word;
+      overflow-wrap: break-word;
+      font-size: 1.05rem;
+      line-height: 1.45;
+      color: #000000;
+      font-weight: 500;
     }
   </style>
 </head>
+<body class="bg-slate-100 text-slate-800 antialiased overflow-hidden flex justify-center selection:bg-teal-200">
 
-<body class="bg-slate-200 text-slate-800 h-screen w-screen flex justify-center items-center overflow-hidden p-0 sm:p-4">
+  <!-- Mobile Max Width Shell -->
+  <div id="appShell" class="w-full max-w-md bg-white app-viewport flex flex-col relative overflow-hidden shadow-2xl">
 
-  <main class="w-full max-w-lg h-full sm:h-[94vh] sm:max-h-[920px] bg-white sm:rounded-[44px] shadow-2xl flex flex-col relative overflow-hidden">
-
-    <!-- ========================================================================= -->
-    <!-- VIEW 1: HOMEPAGE (GEMINI-STYLE CHAT LIST & DASHBOARD)                     -->
-    <!-- ========================================================================= -->
-    <section id="homeView" class="flex-1 flex flex-col h-full bg-[#f8fafc] animate-fade-in relative z-10">
+    <!-- ========================================== -->
+    <!-- VIEW 1: HOME PAGE (Conversations List)    -->
+    <!-- ========================================== -->
+    <section id="viewHome" class="flex-1 flex flex-col h-full bg-[#f8fafc]">
       
-      <!-- Top Homepage Header -->
-      <header class="pt-6 px-6 pb-4 bg-white border-b border-slate-100 flex flex-col gap-3">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2.5">
-            <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-[#00bf57] to-[#0096b7] flex items-center justify-center text-white shadow-sm font-bold text-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-              </svg>
-            </div>
-            <div>
-              <h1 class="text-xl font-bold tracking-tight text-slate-900 leading-tight">Reflect</h1>
-              <p class="text-[11px] text-slate-400 font-medium">Text yourself • Find clarity</p>
-            </div>
+      <!-- Top App Bar -->
+      <header class="px-5 pt-safe pt-4 pb-3 bg-white border-b border-slate-100 flex items-center justify-between shadow-xs">
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-[#00bf57] to-[#009abb] flex items-center justify-center text-white shadow-sm shadow-emerald-500/20">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            </svg>
           </div>
-
-          <div class="flex items-center gap-1.5">
-            <!-- Mute/Sound toggle -->
-            <button id="soundToggleBtn" title="Toggle Sound" class="w-9 h-9 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center hover:bg-slate-200 transition">
-              <svg id="soundIconOn" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-              </svg>
-              <svg id="soundIconOff" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 hidden text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
-              </svg>
-            </button>
+          <div>
+            <h1 class="text-lg font-bold tracking-tight text-slate-900 leading-none">Reflect</h1>
+            <p class="text-[11px] font-medium text-slate-400 mt-1">Dual-voice self talk</p>
           </div>
-        </div>
-
-        <!-- Search Bar -->
-        <div class="relative w-full">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input 
-            type="text" 
-            id="searchInput" 
-            placeholder="Search past reflections..." 
-            class="w-full bg-slate-100 hover:bg-slate-200/70 focus:bg-white text-sm rounded-2xl pl-10 pr-4 py-2.5 outline-none focus:ring-2 focus:ring-slate-300 transition placeholder:text-slate-400"
-          />
         </div>
       </header>
 
-      <!-- Chat List Section with scroll -->
-      <div id="homeChatsScroll" class="flex-1 overflow-y-auto px-5 py-4 space-y-5 no-scrollbar">
-        <!-- Dynamic list populated via JS -->
+      <!-- Search Filter Bar -->
+      <div class="px-4 py-3 bg-white border-b border-slate-100">
+        <div class="relative flex items-center">
+          <svg class="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <input 
+            id="searchInput" 
+            type="text" 
+            placeholder="Search past reflections..." 
+            class="w-full pl-9 pr-4 py-2 bg-slate-100/80 rounded-xl text-[14px] text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#009abb]/30 focus:bg-white transition-all border border-transparent focus:border-slate-200"
+          />
+        </div>
       </div>
 
-      <!-- Bottom Floating New Chat Bar -->
-      <div class="p-4 bg-white/95 backdrop-blur-sm border-t border-slate-100 flex items-center justify-between gap-3">
+      <!-- Chats List (Scrollable Area) -->
+      <main id="chatListContainer" class="flex-1 overflow-y-auto px-4 py-3 space-y-2.5 no-scrollbar">
+        <!-- Injected dynamically via JS -->
+      </main>
+
+      <!-- Bottom Floating New Chat Button -->
+      <div class="p-4 bg-gradient-to-t from-white via-white/95 to-transparent pb-safe border-t border-slate-100">
         <button 
-          id="homeNewChatBtn" 
-          class="flex-1 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl py-3.5 px-5 font-semibold text-sm shadow-md active:scale-[0.98] transition flex items-center justify-center gap-2"
+          id="btnNewReflection"
+          class="w-full py-3.5 px-5 bg-slate-900 hover:bg-slate-800 active:scale-[0.98] text-white rounded-2xl font-semibold text-sm flex items-center justify-center space-x-2 shadow-lg shadow-slate-900/10 transition-transform"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+          <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
           </svg>
           <span>New Reflection</span>
         </button>
-
-        <button 
-          id="quickPromptBtn" 
-          title="Browse spark prompts"
-          class="w-12 h-12 rounded-2xl bg-amber-50 hover:bg-amber-100 border border-amber-200/80 text-amber-600 flex items-center justify-center transition active:scale-95"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2a7 7 0 00-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 001 1h6a1 1 0 001-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 00-7-7zm2 18h-4v-1h4v1zm1-3H9v-.62l-.76-.55A5.002 5.002 0 017 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.63-.78 3.1-2.24 4.15L14 13.62V17z"/>
-          </svg>
-        </button>
       </div>
-
     </section>
 
-    <!-- ========================================================================= -->
-    <!-- VIEW 2: DIALOGUE VIEW (ORIGINAL MOCKUP & TAIL BUBBLES)                     -->
-    <!-- ========================================================================= -->
-    <section id="chatView" class="hidden flex-1 flex flex-col h-full bg-white animate-fade-in relative z-10">
+    <!-- ========================================== -->
+    <!-- VIEW 2: ACTIVE CHAT SCREEN                 -->
+    <!-- ========================================== -->
+    <section id="viewChat" class="hidden flex-1 flex-col h-full bg-white relative">
       
-      <!-- Top Pill Header matching user's original mockup -->
-      <header class="pt-5 px-5 pb-2 z-20 bg-white">
-        <div class="w-full bg-[#cbd5e1] rounded-[36px] px-3.5 py-3 flex items-center justify-between shadow-sm relative">
-          
-          <!-- Circular Back Arrow Button to return to Homepage -->
-          <button id="chatBackBtn" aria-label="Back to Homepage" class="w-12 h-12 rounded-full bg-white flex items-center justify-center text-slate-700 shadow-sm hover:bg-slate-50 active:scale-95 transition-all z-10">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 stroke-[3] -translate-x-0.5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
+      <!-- Chat Header -->
+      <header class="px-3 pt-safe pt-3 pb-2.5 bg-white/90 backdrop-blur border-b border-slate-100 flex items-center justify-between z-20">
+        <button 
+          id="btnBackToHome" 
+          aria-label="Back" 
+          class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 active:bg-slate-200 text-slate-700 transition"
+        >
+          <svg class="w-6 h-6 stroke-[2.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
 
-          <!-- Centered Chat Name with rename trigger -->
-          <div id="chatTitleContainer" class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer group" title="Click to rename chat">
-            <h2 id="chatTitle" class="text-2xl font-normal text-black tracking-tight truncate max-w-[210px] sm:max-w-[250px]" style="font-family: 'Comfortaa', cursive;">Chat Name</h2>
-            <span class="text-[10px] text-slate-500 font-medium -mt-0.5 group-hover:text-slate-800 transition">tap to rename</span>
-          </div>
-
-          <!-- Right utilities: Sparks & 3-dots Session menu -->
-          <div class="flex items-center gap-1.5 z-10">
-            <button id="chatPromptsBtn" title="Inspiration Prompts" class="w-10 h-10 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white active:scale-95 shadow-sm transition">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-500" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2a7 7 0 00-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 001 1h6a1 1 0 001-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 00-7-7zm2 18h-4v-1h4v1zm1-3H9v-.62l-.76-.55A5.002 5.002 0 017 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.63-.78 3.1-2.24 4.15L14 13.62V17z"/>
-              </svg>
-            </button>
-            <button id="chatActionsBtn" title="Chat Actions" class="w-10 h-10 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white active:scale-95 shadow-sm transition">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-700" fill="currentColor" viewBox="0 0 24 24">
-                <circle cx="12" cy="5" r="2"/>
-                <circle cx="12" cy="12" r="2"/>
-                <circle cx="12" cy="19" r="2"/>
-              </svg>
-            </button>
-          </div>
+        <div id="chatHeaderTitle" class="flex-1 text-center px-2 cursor-pointer">
+          <h2 id="activeChatTitle" class="font-bold text-slate-900 text-base leading-tight truncate">Chat Name</h2>
+          <span class="text-[11px] text-slate-400 font-medium">Tap to rename</span>
         </div>
+
+        <!-- Chat Options Menu Button -->
+        <button 
+          id="btnChatMenu" 
+          aria-label="Options" 
+          class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 active:bg-slate-200 text-slate-700 transition"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+          </svg>
+        </button>
       </header>
 
-      <!-- Dialogue Messages Canvas -->
-      <div id="messageContainer" class="flex-1 overflow-y-auto px-5 py-6 space-y-6 no-scrollbar">
-        <!-- Messages rendered with dynamic SVG bubbles here -->
-      </div>
+      <!-- Messages Stream -->
+      <main id="messagesContainer" class="flex-1 overflow-y-auto px-4 py-4 space-y-4 no-scrollbar">
+        <!-- Rendered messages -->
+      </main>
 
-      <!-- Dialogue View Bottom Controls: Toggle + Pill Input Box -->
-      <footer class="p-5 pt-1 bg-white z-10 flex flex-col gap-3">
+      <!-- Input Bar & Mode Toggle -->
+      <footer class="p-3 bg-white border-t border-slate-100 pb-safe">
         
-        <!-- Toggle Switch matching mockup -->
-        <div class="flex items-center justify-between px-1">
-          <div class="flex items-center gap-3">
+        <!-- Perspective Switch Toggle -->
+        <div class="flex items-center justify-between mb-2 px-1">
+          <div class="flex items-center space-x-2">
             <button 
-              id="modeToggleContainer" 
+              id="modeToggleSwitch" 
               type="button" 
               role="switch" 
               aria-checked="false" 
-              class="w-16 h-8 rounded-full cursor-pointer relative p-0.5 transition-colors duration-300 select-none bg-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400"
-              title="Toggle between Green and Blue voices"
+              class="w-13 h-7 w-[52px] bg-[#00bf57] rounded-full p-0.5 flex items-center cursor-pointer transition-colors duration-200 relative focus:outline-none"
             >
-              <div id="toggleThumb" class="w-7 h-7 rounded-full transition-all duration-300 ease-out transform translate-x-0 bg-[#00bf57]"></div>
+              <div id="toggleKnob" class="toggle-knob w-6 h-6 bg-white rounded-full shadow-md"></div>
             </button>
-
-            <span id="activeModeLabel" class="text-xs font-semibold uppercase tracking-wider text-emerald-700">
+            <span id="modeStatusLabel" class="text-xs font-semibold text-emerald-700 uppercase tracking-wide">
               Green Mode
             </span>
           </div>
 
-          <button id="clearChatBtn" class="text-xs text-slate-400 hover:text-red-500 font-medium px-2 py-1 transition" title="Clear conversation">
-            Clear chat
+          <span id="perspectiveHint" class="text-[11px] text-slate-400">
+            Left / Voice 1
+          </span>
+        </div>
+
+        <!-- Pill Input Form -->
+        <form id="chatForm" class="relative flex items-center">
+          <input 
+            type="text" 
+            id="messageInput" 
+            autocomplete="off" 
+            placeholder="Type here..." 
+            class="w-full py-3.5 pl-5 pr-12 bg-[#cbd5e1]/50 focus:bg-slate-200/80 rounded-full text-[16px] text-slate-900 placeholder-slate-500 focus:outline-none transition-all"
+          />
+          <button 
+            type="submit" 
+            id="sendBtn" 
+            aria-label="Send" 
+            class="absolute right-1.5 w-9 h-9 rounded-full bg-slate-900 text-white flex items-center justify-center active:scale-95 transition-transform disabled:opacity-40"
+          >
+            <svg class="w-4 h-4 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+            </svg>
+          </button>
+        </form>
+      </footer>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- MODALS & ACTION SHEETS                     -->
+    <!-- ========================================== -->
+    
+    <!-- 3-Dots Action Sheet Modal -->
+    <div id="actionSheetModal" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-end justify-center transition-opacity">
+      <div class="w-full max-w-md bg-white rounded-t-3xl p-5 pb-safe space-y-3 animate-in fade-in slide-in-from-bottom duration-200">
+        <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-2"></div>
+        <h3 id="modalChatTitle" class="text-sm font-bold text-slate-400 uppercase tracking-wider text-center truncate">Options</h3>
+        
+        <div class="space-y-1">
+          <button id="modalBtnRename" class="w-full py-3 px-4 rounded-xl flex items-center space-x-3 text-slate-700 hover:bg-slate-100 text-left font-medium active:bg-slate-200">
+            <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+            <span>Rename Reflection</span>
+          </button>
+          <button id="modalBtnExport" class="w-full py-3 px-4 rounded-xl flex items-center space-x-3 text-slate-700 hover:bg-slate-100 text-left font-medium active:bg-slate-200">
+            <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+            <span>Copy as Markdown</span>
+          </button>
+          <button id="modalBtnDelete" class="w-full py-3 px-4 rounded-xl flex items-center space-x-3 text-rose-600 hover:bg-rose-50 text-left font-medium active:bg-rose-100">
+            <svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            <span>Delete Reflection</span>
           </button>
         </div>
 
-        <!-- Pill Input matching mockup: "Type here..." -->
-        <form id="chatForm" class="w-full">
-          <div class="w-full bg-[#cbd5e1] rounded-[36px] px-6 py-4 flex items-center justify-between shadow-inner focus-within:bg-[#cbd5e1]/95 transition-all">
-            <input 
-              type="text" 
-              id="messageInput" 
-              placeholder="Type here..." 
-              autocomplete="off" 
-              class="w-full bg-transparent outline-none text-slate-900 placeholder-slate-600 text-lg font-normal"
-            />
-
-            <button 
-              type="submit" 
-              id="sendBtn" 
-              aria-label="Send message" 
-              class="ml-3 w-9 h-9 rounded-full flex items-center justify-center text-slate-700 hover:scale-105 active:scale-95 transition"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 transform rotate-45 -translate-y-0.5 -translate-x-0.5 fill-slate-700" viewBox="0 0 20 20">
-                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
-              </svg>
-            </button>
-          </div>
-        </form>
-
-      </footer>
-
-    </section>
-
-    <!-- Context Menu Dropdown for Homepage / Chat View -->
-    <div id="actionMenuBackdrop" class="hidden fixed inset-0 z-40"></div>
-    <div id="contextMenuDropdown" class="hidden absolute z-50 bg-white rounded-2xl shadow-2xl border border-slate-200 py-1.5 w-44 text-sm animate-fade-in font-sans">
-      <button id="menuRenameBtn" class="w-full text-left px-4 py-2 hover:bg-slate-100 flex items-center gap-2.5 text-slate-700 transition">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-        </svg>
-        <span>Rename</span>
-      </button>
-      <button id="menuExportBtn" class="w-full text-left px-4 py-2 hover:bg-slate-100 flex items-center gap-2.5 text-slate-700 transition">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-        </svg>
-        <span>Copy Markdown</span>
-      </button>
-      <div class="h-px bg-slate-100 my-1"></div>
-      <button id="menuDeleteBtn" class="w-full text-left px-4 py-2 hover:bg-red-50 flex items-center gap-2.5 text-red-600 transition">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-        </svg>
-        <span>Delete chat</span>
-      </button>
-    </div>
-
-    <!-- Rename Modal -->
-    <div id="renameModal" class="hidden absolute inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl border border-slate-200">
-        <h3 class="text-base font-bold text-slate-900 mb-1">Rename Reflection</h3>
-        <p class="text-xs text-slate-500 mb-3">Choose a title for this internal conversation:</p>
-        <input 
-          id="renameInput" 
-          type="text" 
-          maxlength="40"
-          class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-slate-400 mb-4" 
-        />
-        <div class="flex justify-end gap-2 text-xs">
-          <button id="cancelRenameBtn" class="px-4 py-2 text-slate-500 hover:text-slate-700 font-medium">Cancel</button>
-          <button id="confirmRenameBtn" class="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-medium transition">Save</button>
-        </div>
+        <button id="modalBtnCancel" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl font-medium mt-2">
+          Cancel
+        </button>
       </div>
     </div>
 
-    <!-- Delete Confirmation Modal (Gemini style) -->
-    <div id="deleteModal" class="hidden absolute inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl border border-slate-200">
-        <div class="w-10 h-10 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mb-3">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
-        </div>
-        <h3 class="text-base font-bold text-slate-900 mb-1">Delete this chat?</h3>
-        <p class="text-xs text-slate-500 mb-4 leading-relaxed">
-          This reflection and all messages within will be permanently removed.
-        </p>
-        <div class="flex justify-end gap-2 text-xs">
-          <button id="cancelDeleteBtn" class="px-4 py-2 text-slate-500 hover:text-slate-700 font-medium">Cancel</button>
-          <button id="confirmDeleteBtn" class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition">Delete</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Guided Reflection Prompts Modal -->
-    <div id="promptsModal" class="hidden absolute inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-slate-200 flex flex-col max-h-[85vh]">
-        <div class="flex justify-between items-center mb-2">
-          <h2 class="text-base font-bold text-slate-900">Reflection Prompts</h2>
-          <button id="closePromptsModal" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
-        </div>
-        <p class="text-xs text-slate-500 mb-3">Choose an opening spark to paste into your chat:</p>
-        
-        <div class="space-y-2.5 overflow-y-auto pr-1 no-scrollbar text-xs">
-          <div class="prompt-card p-3.5 rounded-2xl bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/60 cursor-pointer transition text-emerald-950" data-target="green">
-            🌱 <strong>(Green)</strong> What is a feeling or worry I've been trying to bottle up?
-          </div>
-          <div class="prompt-card p-3.5 rounded-2xl bg-cyan-50 hover:bg-cyan-100/80 border border-cyan-200/60 cursor-pointer transition text-cyan-950" data-target="blue">
-            💡 <strong>(Blue)</strong> Looking at this situation objectively, what is truly true right now?
-          </div>
-          <div class="prompt-card p-3.5 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200 cursor-pointer transition text-slate-800" data-target="green">
-            💭 <strong>(Green)</strong> If I could be completely honest without fear of judgment, I'd say...
-          </div>
-          <div class="prompt-card p-3.5 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200 cursor-pointer transition text-slate-800" data-target="blue">
-            ⚓ <strong>(Blue)</strong> What gentle advice would I offer to my dearest friend here?
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Notification Toast -->
-    <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs px-4 py-2.5 rounded-full shadow-xl z-[60] font-medium transition-all opacity-0 pointer-events-none -translate-y-2">
-      Copied to clipboard
-    </div>
-
-  </main>
+  </div>
 
   <script>
-    const STORAGE_KEY = 'reflect_app_chats_v3';
-    const ACTIVE_ID_KEY = 'reflect_app_active_chat_id_v3';
-
+    // App State Management
+    const STORAGE_KEY = 'reflect_app_data_v2';
     let appData = {
-      chats: []
+      chats: [],
+      activeChatId: null,
+      currentMode: 'green' // 'green' (left) or 'blue' (right)
     };
 
-    let currentChatId = null;
-    let activeMode = 'green'; // 'green' (left) or 'blue' (right)
-    let currentMenuTargetId = null;
-    let pendingDeleteId = null;
-    let pendingRenameId = null;
-    let soundEnabled = true;
-    let synth = null;
-    let audioReady = false;
+    let targetActionChatId = null;
 
-    // Initialize Web Audio tone generator
-    function initAudio() {
-      if (!audioReady && window.Tone && soundEnabled) {
+    // Load initial data
+    function loadData() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
         try {
-          synth = new Tone.MembraneSynth({
-            pitchDecay: 0.05,
-            octaves: 2,
-            oscillator: { type: 'sine' },
-            envelope: { attack: 0.001, decay: 0.15, sustain: 0.01, release: 0.1 }
-          }).toDestination();
-          synth.volume.value = -12;
-          audioReady = true;
+          appData = JSON.parse(saved);
         } catch (e) {
-          console.warn("Audio unavailable", e);
-        }
-      }
-    }
-
-    function playTone(type) {
-      if (!soundEnabled) return;
-      initAudio();
-      if (!audioReady || !synth) return;
-      try {
-        if (Tone.context.state !== 'running') Tone.start();
-        if (type === 'green') synth.triggerAttackRelease('F3', '16n');
-        else if (type === 'blue') synth.triggerAttackRelease('B3', '16n');
-        else synth.triggerAttackRelease('E3', '32n');
-      } catch (err) {}
-    }
-
-    function loadSavedData() {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        try {
-          appData = JSON.parse(stored);
-        } catch (e) {
-          appData = { chats: [] };
+          console.error(e);
         }
       }
 
+      // Default sample if empty
       if (!appData.chats || appData.chats.length === 0) {
-        const initialChat = {
-          id: 'chat_' + Date.now(),
-          title: 'Chat Name',
-          createdAt: Date.now() - 3600000,
-          updatedAt: Date.now() - 60000,
-          messages: [
-            {
-              id: 'm1',
-              mode: 'green',
-              text: 'one mode for green',
-              timestamp: Date.now() - 120000
-            },
-            {
-              id: 'm2',
-              mode: 'blue',
-              text: 'one mode for blue',
-              timestamp: Date.now() - 60000
-            }
-          ]
-        };
-        appData.chats = [initialChat];
-        currentChatId = initialChat.id;
+        const sampleId = 'chat_' + Date.now();
+        appData.chats = [
+          {
+            id: sampleId,
+            title: 'Chat Name',
+            updatedAt: Date.now(),
+            messages: [
+              { id: '1', side: 'green', text: 'one mode for green', timestamp: Date.now() - 300000 },
+              { id: '2', side: 'blue', text: 'one mode for blue', timestamp: Date.now() - 100000 }
+            ]
+          }
+        ];
         saveData();
-      } else {
-        const lastActive = localStorage.getItem(ACTIVE_ID_KEY);
-        if (lastActive && appData.chats.some(c => c.id === lastActive)) {
-          currentChatId = lastActive;
-        } else {
-          currentChatId = appData.chats[0].id;
-        }
       }
     }
 
     function saveData() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-      if (currentChatId) {
-        localStorage.setItem(ACTIVE_ID_KEY, currentChatId);
-      }
     }
 
-    function getActiveChat() {
-      return appData.chats.find(c => c.id === currentChatId) || appData.chats[0];
+    function getRelativeTime(timestamp) {
+      const diff = Math.floor((Date.now() - timestamp) / 1000);
+      if (diff < 60) return 'Just now';
+      if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+      return `${Math.floor(diff / 86400)}d ago`;
     }
 
-    function showToast(text) {
-      const toast = document.getElementById('toast');
-      toast.textContent = text;
-      toast.classList.remove('opacity-0', 'pointer-events-none', '-translate-y-2');
-      toast.classList.add('opacity-100', 'translate-y-0');
-      setTimeout(() => {
-        toast.classList.remove('opacity-100', 'translate-y-0');
-        toast.classList.add('opacity-0', 'pointer-events-none', '-translate-y-2');
-      }, 2200);
-    }
+    // View Switching
+    const viewHome = document.getElementById('viewHome');
+    const viewChat = document.getElementById('viewChat');
 
-    function formatTimeRelative(timestamp) {
-      if (!timestamp) return '';
-      const diffSec = Math.floor((Date.now() - timestamp) / 1000);
-      if (diffSec < 60) return 'Just now';
-      const diffMin = Math.floor(diffSec / 60);
-      if (diffMin < 60) return `${diffMin}m ago`;
-      const diffHours = Math.floor(diffMin / 60);
-      if (diffHours < 24) return `${diffHours}h ago`;
-      const diffDays = Math.floor(diffHours / 24);
-      if (diffDays === 1) return 'Yesterday';
-      if (diffDays < 7) return `${diffDays}d ago`;
-      return new Date(timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' });
-    }
-
-    const homeView = document.getElementById('homeView');
-    const chatView = document.getElementById('chatView');
-    const homeChatsScroll = document.getElementById('homeChatsScroll');
-    const searchInput = document.getElementById('searchInput');
-    const homeNewChatBtn = document.getElementById('homeNewChatBtn');
-    const quickPromptBtn = document.getElementById('quickPromptBtn');
-    const chatBackBtn = document.getElementById('chatBackBtn');
-    const chatTitle = document.getElementById('chatTitle');
-    const chatTitleContainer = document.getElementById('chatTitleContainer');
-    const chatPromptsBtn = document.getElementById('chatPromptsBtn');
-    const chatActionsBtn = document.getElementById('chatActionsBtn');
-    const messageContainer = document.getElementById('messageContainer');
-    const modeToggleContainer = document.getElementById('modeToggleContainer');
-    const toggleThumb = document.getElementById('toggleThumb');
-    const activeModeLabel = document.getElementById('activeModeLabel');
-    const messageInput = document.getElementById('messageInput');
-    const chatForm = document.getElementById('chatForm');
-    const clearChatBtn = document.getElementById('clearChatBtn');
-
-    // Context & Modals
-    const actionMenuBackdrop = document.getElementById('actionMenuBackdrop');
-    const contextMenuDropdown = document.getElementById('contextMenuDropdown');
-    const menuRenameBtn = document.getElementById('menuRenameBtn');
-    const menuExportBtn = document.getElementById('menuExportBtn');
-    const menuDeleteBtn = document.getElementById('menuDeleteBtn');
-
-    const renameModal = document.getElementById('renameModal');
-    const renameInput = document.getElementById('renameInput');
-    const cancelRenameBtn = document.getElementById('cancelRenameBtn');
-    const confirmRenameBtn = document.getElementById('confirmRenameBtn');
-
-    const deleteModal = document.getElementById('deleteModal');
-    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
-    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-
-    const promptsModal = document.getElementById('promptsModal');
-    const closePromptsModal = document.getElementById('closePromptsModal');
-
-    const soundToggleBtn = document.getElementById('soundToggleBtn');
-    const soundIconOn = document.getElementById('soundIconOn');
-    const soundIconOff = document.getElementById('soundIconOff');
-
-    soundToggleBtn.addEventListener('click', () => {
-      soundEnabled = !soundEnabled;
-      soundIconOn.classList.toggle('hidden', !soundEnabled);
-      soundIconOff.classList.toggle('hidden', soundEnabled);
-      showToast(soundEnabled ? 'Audio cues enabled' : 'Audio muted');
-    });
-
-    function navigateTo(viewName) {
-      if (viewName === 'home') {
-        renderHomepage();
-        chatView.classList.add('hidden');
-        homeView.classList.remove('hidden');
-        closeContextMenu();
+    function switchView(viewName) {
+      if (viewName === 'chat') {
+        viewHome.classList.add('hidden');
+        viewChat.classList.remove('hidden');
+        viewChat.classList.add('flex');
+        renderChatMessages();
       } else {
-        renderDialogueView();
-        homeView.classList.add('hidden');
-        chatView.classList.remove('hidden');
-        closeContextMenu();
+        viewChat.classList.add('hidden');
+        viewChat.classList.remove('flex');
+        viewHome.classList.remove('hidden');
+        renderHomeList();
       }
     }
 
-    chatBackBtn.addEventListener('click', () => {
-      navigateTo('home');
-    });
+    // Render Home List
+    function renderHomeList(filterQuery = '') {
+      const container = document.getElementById('chatListContainer');
+      container.innerHTML = '';
 
-    function renderHomepage() {
-      const query = (searchInput.value || '').trim().toLowerCase();
-      homeChatsScroll.innerHTML = '';
+      const query = filterQuery.toLowerCase().trim();
+      const filtered = appData.chats
+        .filter(c => {
+          if (!query) return true;
+          return c.title.toLowerCase().includes(query) || 
+                 c.messages.some(m => m.text.toLowerCase().includes(query));
+        })
+        .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 
-      // Sort chats reverse chronological by updatedAt
-      let filteredChats = [...appData.chats].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-
-      if (query) {
-        filteredChats = filteredChats.filter(c => 
-          (c.title || '').toLowerCase().includes(query) ||
-          (c.messages || []).some(m => (m.text || '').toLowerCase().includes(query))
-        );
-      }
-
-      if (filteredChats.length === 0) {
-        const emptyEl = document.createElement('div');
-        emptyEl.className = 'py-14 text-center px-4 flex flex-col items-center justify-center';
-        emptyEl.innerHTML = `
-          <div class="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="h-64 flex flex-col items-center justify-center text-slate-400 text-center px-4">
+            <svg class="w-12 h-12 stroke-1 mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            <p class="text-sm">No reflections found</p>
           </div>
-          <h3 class="text-sm font-bold text-slate-700">${query ? 'No matching reflections' : 'No reflections yet'}</h3>
-          <p class="text-xs text-slate-400 max-w-xs mt-1 leading-relaxed">
-            ${query ? 'Try a different search word or clear the filter.' : 'Begin an internal dialogue to sort thoughts, feelings, and next steps.'}
-          </p>
         `;
-        homeChatsScroll.appendChild(emptyEl);
         return;
       }
 
-      const listContainer = document.createElement('div');
-      listContainer.className = 'space-y-2.5';
+      filtered.forEach(chat => {
+        const lastMsg = chat.messages[chat.messages.length - 1];
+        const lastText = lastMsg ? lastMsg.text : 'Empty reflection...';
+        const badgeColor = lastMsg?.side === 'blue' ? 'bg-[#009abb]' : 'bg-[#00bf57]';
 
-      filteredChats.forEach(chat => {
-        const chatItem = document.createElement('div');
-        const isActive = chat.id === currentChatId;
-        const lastMsg = chat.messages && chat.messages.length > 0 ? chat.messages[chat.messages.length - 1] : null;
+        const item = document.createElement('div');
+        item.className = 'w-full bg-white rounded-2xl p-4 border border-slate-200/70 shadow-xs flex items-center justify-between active:bg-slate-50 transition cursor-pointer';
+        item.onclick = (e) => {
+          if (e.target.closest('.menu-btn')) return;
+          openChat(chat.id);
+        };
 
-        chatItem.className = `group bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 cursor-pointer transition flex items-center justify-between gap-3 ${
-          isActive ? 'ring-1 ring-slate-300' : ''
-        }`;
-
-        // Preview snippet
-        let previewText = 'Empty reflection';
-        let previewTag = '';
-        if (lastMsg) {
-          previewText = lastMsg.text;
-          previewTag = lastMsg.mode === 'green'
-            ? `<span class="inline-block w-2 h-2 rounded-full bg-[#00bf57] mr-1.5 flex-shrink-0"></span>`
-            : `<span class="inline-block w-2 h-2 rounded-full bg-[#0096b7] mr-1.5 flex-shrink-0"></span>`;
-        }
-
-        chatItem.innerHTML = `
-          <div class="flex-1 min-w-0 pr-1">
+        item.innerHTML = `
+          <div class="flex-1 min-w-0 pr-3">
             <div class="flex items-center justify-between mb-1">
-              <h3 class="text-sm font-bold text-slate-900 truncate">${chat.title || 'Untitled'}</h3>
-              <span class="text-[10px] text-slate-400 font-medium ml-2 flex-shrink-0">${formatTimeRelative(chat.updatedAt || chat.createdAt)}</span>
+              <h3 class="font-bold text-slate-900 text-[15px] truncate">${chat.title || 'Untitled'}</h3>
+              <span class="text-[11px] text-slate-400 font-medium ml-2 shrink-0">${getRelativeTime(chat.updatedAt)}</span>
             </div>
-            <div class="flex items-center text-xs text-slate-500 font-normal truncate">
-              ${previewTag}
-              <span class="truncate">${previewText}</span>
+            <div class="flex items-center space-x-1.5">
+              <span class="w-2 h-2 rounded-full ${badgeColor} shrink-0"></span>
+              <p class="text-xs text-slate-500 truncate">${escapeHTML(lastText)}</p>
             </div>
           </div>
-
-          <!-- 3-Dots Action Button (Gemini Style) -->
-          <button 
-            data-chat-id="${chat.id}" 
-            title="Chat options" 
-            class="chat-dots-btn w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition flex-shrink-0"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
-              <circle cx="12" cy="5" r="2"/>
-              <circle cx="12" cy="12" r="2"/>
-              <circle cx="12" cy="19" r="2"/>
-            </svg>
+          <button class="menu-btn w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 active:bg-slate-100 shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
           </button>
         `;
 
-        // Click row to open chat
-        chatItem.addEventListener('click', (e) => {
-          if (!e.target.closest('.chat-dots-btn')) {
-            currentChatId = chat.id;
-            saveData();
-            navigateTo('chat');
-          }
-        });
-
-        // Click dots to open Gemini menu
-        const dotsBtn = chatItem.querySelector('.chat-dots-btn');
-        dotsBtn.addEventListener('click', (e) => {
+        item.querySelector('.menu-btn').onclick = (e) => {
           e.stopPropagation();
-          openContextMenu(chat.id, dotsBtn);
-        });
+          openActionSheet(chat.id);
+        };
 
-        listContainer.appendChild(chatItem);
+        container.appendChild(item);
       });
-
-      homeChatsScroll.appendChild(listContainer);
     }
 
-    searchInput.addEventListener('input', () => {
-      renderHomepage();
+    function openChat(chatId) {
+      appData.activeChatId = chatId;
+      saveData();
+      switchView('chat');
+    }
+
+    // SVG Bubble Generator
+    function createBubbleSVG(side, width, height) {
+      const radius = Math.min(height / 2, 28);
+      const finW = 16;
+      let path = '';
+      const color = side === 'green' ? '#00bf57' : '#009abb';
+
+      if (side === 'green') {
+        path = `
+          M 0 0
+          C ${finW * 0.75} 0, ${finW} ${radius * 0.3}, ${finW} ${radius}
+          V ${height - radius}
+          A ${radius} ${radius} 0 0 0 ${finW + radius} ${height}
+          H ${width - radius}
+          A ${radius} ${radius} 0 0 0 ${width} ${height - radius}
+          V ${radius}
+          A ${radius} ${radius} 0 0 0 ${width - radius} 0
+          Z
+        `;
+      } else {
+        path = `
+          M 0 ${radius}
+          A ${radius} ${radius} 0 0 0 ${radius} ${height}
+          H ${width - finW - radius}
+          A ${radius} ${radius} 0 0 0 ${width - finW} ${height - radius}
+          V ${radius}
+          C ${width - finW} ${radius * 0.3}, ${width - finW * 0.75} 0, ${width} 0
+          H ${radius}
+          A ${radius} ${radius} 0 0 0 0 ${radius}
+          Z
+        `;
+      }
+
+      return `
+        <svg class="bubble-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+          <path d="${path}" fill="${color}" stroke="none" />
+        </svg>
+      `;
+    }
+
+    // Render Chat Messages
+    function renderChatMessages() {
+      const chat = appData.chats.find(c => c.id === appData.activeChatId);
+      if (!chat) return;
+
+      document.getElementById('activeChatTitle').textContent = chat.title || 'Chat Name';
+      const container = document.getElementById('messagesContainer');
+      container.innerHTML = '';
+
+      chat.messages.forEach(msg => {
+        const row = document.createElement('div');
+        row.className = `w-full flex ${msg.side === 'green' ? 'justify-start' : 'justify-end'}`;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'bubble-wrapper';
+
+        const content = document.createElement('div');
+        content.className = 'bubble-content';
+        // Asymmetric horizontal padding so text centers relative to capsule body
+        if (msg.side === 'green') {
+          content.style.padding = '14px 18px 14px 28px';
+        } else {
+          content.style.padding = '14px 28px 14px 18px';
+        }
+        content.textContent = msg.text;
+
+        wrapper.appendChild(content);
+        row.appendChild(wrapper);
+        container.appendChild(row);
+
+        // Calculate exact dimensions for crisp vector rendering
+        const updateBubble = () => {
+          const w = Math.round(wrapper.offsetWidth);
+          const h = Math.round(wrapper.offsetHeight);
+          if (w > 0 && h > 0) {
+            const oldSvg = wrapper.querySelector('svg');
+            if (oldSvg) oldSvg.remove();
+            wrapper.insertAdjacentHTML('afterbegin', createBubbleSVG(msg.side, w, h));
+          }
+        };
+
+        requestAnimationFrame(updateBubble);
+      });
+
+      // Scroll to bottom
+      setTimeout(() => {
+        container.scrollTop = container.scrollHeight;
+      }, 50);
+    }
+
+    // Toggle green / blue mode
+    const modeToggle = document.getElementById('modeToggleSwitch');
+    const toggleKnob = document.getElementById('toggleKnob');
+    const modeStatusLabel = document.getElementById('modeStatusLabel');
+    const perspectiveHint = document.getElementById('perspectiveHint');
+
+    function setMode(mode) {
+      appData.currentMode = mode;
+      if (mode === 'blue') {
+        modeToggle.style.backgroundColor = '#009abb';
+        toggleKnob.style.transform = 'translateX(24px)';
+        modeStatusLabel.textContent = 'Blue Mode';
+        modeStatusLabel.className = 'text-xs font-semibold text-[#009abb] uppercase tracking-wide';
+        perspectiveHint.textContent = 'Right / Voice 2';
+      } else {
+        modeToggle.style.backgroundColor = '#00bf57';
+        toggleKnob.style.transform = 'translateX(0px)';
+        modeStatusLabel.textContent = 'Green Mode';
+        modeStatusLabel.className = 'text-xs font-semibold text-[#00bf57] uppercase tracking-wide';
+        perspectiveHint.textContent = 'Left / Voice 1';
+      }
+    }
+
+    modeToggle.addEventListener('click', () => {
+      setMode(appData.currentMode === 'green' ? 'blue' : 'green');
     });
 
-    homeNewChatBtn.addEventListener('click', () => {
-      createNewChat();
+    // Send Message
+    const chatForm = document.getElementById('chatForm');
+    const messageInput = document.getElementById('messageInput');
+
+    chatForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const text = messageInput.value.trim();
+      if (!text || !appData.activeChatId) return;
+
+      const chat = appData.chats.find(c => c.id === appData.activeChatId);
+      if (!chat) return;
+
+      chat.messages.push({
+        id: 'msg_' + Date.now(),
+        side: appData.currentMode,
+        text: text,
+        timestamp: Date.now()
+      });
+      chat.updatedAt = Date.now();
+
+      // If still named "Chat Name", auto-name it from the first line
+      if (chat.title === 'Chat Name' && chat.messages.length === 1) {
+        chat.title = text.length > 24 ? text.substring(0, 24) + '...' : text;
+      }
+
+      saveData();
+      messageInput.value = '';
+      renderChatMessages();
     });
 
-    function createNewChat(initialTitle = 'Chat Name') {
+    // Navigation and Action Handlers
+    document.getElementById('btnBackToHome').addEventListener('click', () => {
+      switchView('home');
+    });
+
+    document.getElementById('btnNewReflection').addEventListener('click', () => {
       const newChat = {
         id: 'chat_' + Date.now(),
-        title: initialTitle,
-        createdAt: Date.now(),
+        title: 'New Reflection',
         updatedAt: Date.now(),
         messages: []
       };
       appData.chats.unshift(newChat);
-      currentChatId = newChat.id;
+      appData.activeChatId = newChat.id;
       saveData();
-      navigateTo('chat');
-    }
-
-    function openContextMenu(chatId, triggerElement) {
-      currentMenuTargetId = chatId;
-      const rect = triggerElement.getBoundingClientRect();
-      const parentRect = document.querySelector('main').getBoundingClientRect();
-
-      let top = rect.bottom - parentRect.top + 4;
-      let left = rect.right - parentRect.left - 176; // width 176px (w-44)
-
-      if (left < 10) left = 10;
-      if (top + 160 > parentRect.height) {
-        top = rect.top - parentRect.top - 150;
-      }
-
-      contextMenuDropdown.style.top = `${top}px`;
-      contextMenuDropdown.style.left = `${left}px`;
-      contextMenuDropdown.classList.remove('hidden');
-      actionMenuBackdrop.classList.remove('hidden');
-    }
-
-    function closeContextMenu() {
-      contextMenuDropdown.classList.add('hidden');
-      actionMenuBackdrop.classList.add('hidden');
-      currentMenuTargetId = null;
-    }
-
-    actionMenuBackdrop.addEventListener('click', closeContextMenu);
-
-    // Chat view top right 3-dots
-    chatActionsBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      openContextMenu(currentChatId, chatActionsBtn);
+      switchView('chat');
     });
 
-    // Menu Action: Rename
-    menuRenameBtn.addEventListener('click', () => {
-      const targetId = currentMenuTargetId || currentChatId;
-      closeContextMenu();
-      promptRename(targetId);
+    // Search input
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      renderHomeList(e.target.value);
     });
 
-    function promptRename(chatId) {
+    // Modal / Action Sheet
+    const actionModal = document.getElementById('actionSheetModal');
+
+    function openActionSheet(chatId) {
+      targetActionChatId = chatId;
       const chat = appData.chats.find(c => c.id === chatId);
-      if (!chat) return;
-      pendingRenameId = chatId;
-      renameInput.value = chat.title || 'Chat Name';
-      renameModal.classList.remove('hidden');
-      setTimeout(() => {
-        renameInput.focus();
-        renameInput.select();
-      }, 50);
+      document.getElementById('modalChatTitle').textContent = chat ? chat.title : 'Options';
+      actionModal.classList.remove('hidden');
     }
 
-    cancelRenameBtn.addEventListener('click', () => {
-      renameModal.classList.add('hidden');
-      pendingRenameId = null;
+    function closeActionSheet() {
+      actionModal.classList.add('hidden');
+      targetActionChatId = null;
+    }
+
+    document.getElementById('btnChatMenu').addEventListener('click', () => {
+      if (appData.activeChatId) openActionSheet(appData.activeChatId);
     });
 
-    confirmRenameBtn.addEventListener('click', () => {
-      if (!pendingRenameId) return;
-      const newTitle = renameInput.value.trim() || 'Chat Name';
-      const chat = appData.chats.find(c => c.id === pendingRenameId);
-      if (chat) {
-        chat.title = newTitle;
-        chat.updatedAt = Date.now();
+    document.getElementById('chatHeaderTitle').addEventListener('click', () => {
+      if (appData.activeChatId) renameChat(appData.activeChatId);
+    });
+
+    document.getElementById('modalBtnCancel').addEventListener('click', closeActionSheet);
+    actionModal.addEventListener('click', (e) => {
+      if (e.target === actionModal) closeActionSheet();
+    });
+
+    document.getElementById('modalBtnRename').addEventListener('click', () => {
+      const id = targetActionChatId;
+      closeActionSheet();
+      if (id) renameChat(id);
+    });
+
+    function renameChat(id) {
+      const chat = appData.chats.find(c => c.id === id);
+      if (!chat) return;
+      const newTitle = prompt('Rename this reflection:', chat.title);
+      if (newTitle && newTitle.trim()) {
+        chat.title = newTitle.trim();
         saveData();
-        renderHomepage();
-        if (chat.id === currentChatId) {
-          chatTitle.textContent = chat.title;
+        renderHomeList();
+        if (appData.activeChatId === id) {
+          document.getElementById('activeChatTitle').textContent = chat.title;
         }
-        showToast('Reflection renamed');
-      }
-      renameModal.classList.add('hidden');
-      pendingRenameId = null;
-    });
-
-    renameInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        confirmRenameBtn.click();
-      }
-    });
-
-    chatTitleContainer.addEventListener('click', () => {
-      promptRename(currentChatId);
-    });
-
-    // Menu Action: Delete
-    menuDeleteBtn.addEventListener('click', () => {
-      const targetId = currentMenuTargetId || currentChatId;
-      closeContextMenu();
-      pendingDeleteId = targetId;
-      deleteModal.classList.remove('hidden');
-    });
-
-    cancelDeleteBtn.addEventListener('click', () => {
-      deleteModal.classList.add('hidden');
-      pendingDeleteId = null;
-    });
-
-    confirmDeleteBtn.addEventListener('click', () => {
-      if (!pendingDeleteId) return;
-      appData.chats = appData.chats.filter(c => c.id !== pendingDeleteId);
-
-      if (appData.chats.length === 0) {
-        // Create fresh empty one
-        const fresh = {
-          id: 'chat_' + Date.now(),
-          title: 'Chat Name',
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-          messages: []
-        };
-        appData.chats.push(fresh);
-      }
-
-      if (currentChatId === pendingDeleteId) {
-        currentChatId = appData.chats[0].id;
-      }
-
-      saveData();
-      deleteModal.classList.add('hidden');
-      pendingDeleteId = null;
-      showToast('Reflection deleted');
-
-      // If we deleted from inside the chat view, return to homepage
-      navigateTo('home');
-    });
-
-    // Menu Action: Export
-    menuExportBtn.addEventListener('click', () => {
-      const targetId = currentMenuTargetId || currentChatId;
-      closeContextMenu();
-      exportChatAsMarkdown(targetId);
-    });
-
-    function exportChatAsMarkdown(chatId) {
-      const chat = appData.chats.find(c => c.id === chatId);
-      if (!chat) return;
-
-      let md = `# ${chat.title || 'Reflection'}\n\n`;
-      if (!chat.messages || chat.messages.length === 0) {
-        md += `_No messages yet._\n`;
-      } else {
-        chat.messages.forEach(m => {
-          const side = m.mode === 'green' ? 'GREEN / INSTINCT' : 'BLUE / LOGIC';
-          md += `**[${side}]**: ${m.text}\n\n`;
-        });
-      }
-
-      const temp = document.createElement('textarea');
-      temp.value = md;
-      document.body.appendChild(temp);
-      temp.select();
-      document.execCommand('copy');
-      document.body.removeChild(temp);
-      showToast('Copied markdown to clipboard');
-    }
-
-    function createBubbleElement(msg) {
-      const isGreen = msg.mode === 'green';
-      const wrapper = document.createElement('div');
-      wrapper.className = `flex w-full ${isGreen ? 'justify-start' : 'justify-end'} group select-text`;
-      wrapper.dataset.messageId = msg.id;
-
-      const bubbleContainer = document.createElement('div');
-      // Substantial width allowance
-      bubbleContainer.className = "relative inline-block min-w-[240px] sm:min-w-[280px] max-w-[92%] sm:max-w-[85%]";
-      
-      const content = document.createElement('div');
-      content.className = `bubble-text-font relative z-10 text-center select-text ${
-        isGreen ? 'pl-8 pr-5 py-5' : 'pl-5 pr-8 py-5'
-      }`;
-      content.style.wordBreak = 'break-word';
-      content.style.overflowWrap = 'break-word';
-      content.textContent = msg.text;
-
-      // Small hover delete cross
-      const deleteMsgBtn = document.createElement('button');
-      deleteMsgBtn.className = "absolute -top-2 " + (isGreen ? "-right-2" : "-left-2") + " w-5 h-5 rounded-full bg-black/75 text-white text-[11px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 cursor-pointer";
-      deleteMsgBtn.innerHTML = "&times;";
-      deleteMsgBtn.title = "Delete message";
-      deleteMsgBtn.onclick = (e) => {
-        e.stopPropagation();
-        deleteMessage(msg.id);
-      };
-
-      bubbleContainer.appendChild(content);
-      bubbleContainer.appendChild(deleteMsgBtn);
-      wrapper.appendChild(bubbleContainer);
-
-      // Render accurate SVG silhouette matching the reference geometry without outline
-      const drawSvg = () => {
-        const existingSvg = bubbleContainer.querySelector('svg');
-        if (existingSvg) existingSvg.remove();
-
-        const rect = content.getBoundingClientRect();
-        const w = Math.max(Math.round(rect.width), 230);
-        const h = Math.max(Math.round(rect.height), 70);
-        const r = Math.min(Math.round(h / 2), 38);
-
-        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        svg.setAttribute("width", w);
-        svg.setAttribute("height", h);
-        svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
-        svg.setAttribute("class", "absolute inset-0 pointer-events-none");
-        svg.style.overflow = "visible";
-
-        const fillColor = isGreen ? "#00bf57" : "#0096b7";
-        let pathD = "";
-
-        if (!isGreen) {
-          // Blue: flat top to sharp tip on top-right, swoop into right capsule curve
-          const tailWidth = 20;
-          pathD = `
-            M ${r} 0
-            L ${w} 0
-            C ${w - 5} 10, ${w - 12} 22, ${w - tailWidth} 30
-            L ${w - tailWidth} ${h - r}
-            A ${r} ${r} 0 0 1 ${w - tailWidth - r} ${h}
-            L ${r} ${h}
-            A ${r} ${r} 0 0 1 ${r} 0
-            Z
-          `;
-        } else {
-          // Green: sharp tip on top-left, flat top extending right, mirrored
-          const tailWidth = 20;
-          pathD = `
-            M 0 0
-            L ${w - r} 0
-            A ${r} ${r} 0 0 1 ${w - r} ${h}
-            L ${tailWidth + r} ${h}
-            A ${r} ${r} 0 0 1 ${tailWidth} ${h - r}
-            L ${tailWidth} 30
-            C ${tailWidth - 8} 22, 5 10, 0 0
-            Z
-          `;
-        }
-
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("d", pathD.replace(/\s+/g, ' ').trim());
-        path.setAttribute("fill", fillColor);
-        path.setAttribute("stroke", "none");
-        path.setAttribute("stroke-width", "0");
-
-        svg.appendChild(path);
-        bubbleContainer.insertBefore(svg, content);
-      };
-
-      requestAnimationFrame(drawSvg);
-
-      return wrapper;
-    }
-
-    function renderDialogueView() {
-      const chat = getActiveChat();
-      if (!chat) return;
-
-      chatTitle.textContent = chat.title || 'Chat Name';
-      messageContainer.innerHTML = '';
-
-      if (!chat.messages || chat.messages.length === 0) {
-        const emptyDialogue = document.createElement('div');
-        emptyDialogue.className = 'text-center py-16 px-6';
-        emptyDialogue.innerHTML = `
-          <div class="inline-block p-4 bg-slate-100 rounded-3xl mb-3 text-slate-400">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-9 w-9 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-          </div>
-          <h3 class="text-base font-bold text-slate-700 font-sans">Start with yourself</h3>
-          <p class="text-xs text-slate-400 max-w-xs mx-auto mt-1 font-sans">
-            Write down whatever is on your mind. Use the green toggle for raw thoughts and blue for grounding.
-          </p>
-        `;
-        messageContainer.appendChild(emptyDialogue);
-      } else {
-        chat.messages.forEach(msg => {
-          const el = createBubbleElement(msg);
-          messageContainer.appendChild(el);
-        });
-      }
-
-      scrollChatToBottom();
-      updateToggleVisuals();
-    }
-
-    function scrollChatToBottom() {
-      setTimeout(() => {
-        messageContainer.scrollTo({
-          top: messageContainer.scrollHeight,
-          behavior: 'smooth'
-        });
-      }, 40);
-    }
-
-    function setMode(mode) {
-      activeMode = mode;
-      updateToggleVisuals();
-      playTone('toggle');
-    }
-
-    function updateToggleVisuals() {
-      if (activeMode === 'green') {
-        toggleThumb.style.transform = 'translateX(0px)';
-        toggleThumb.style.backgroundColor = '#00bf57';
-        modeToggleContainer.setAttribute('aria-checked', 'false');
-        activeModeLabel.textContent = 'Green Mode';
-        activeModeLabel.className = 'text-xs font-semibold uppercase tracking-wider text-emerald-700';
-      } else {
-        toggleThumb.style.transform = 'translateX(32px)';
-        toggleThumb.style.backgroundColor = '#0096b7';
-        modeToggleContainer.setAttribute('aria-checked', 'true');
-        activeModeLabel.textContent = 'Blue Mode';
-        activeModeLabel.className = 'text-xs font-semibold uppercase tracking-wider text-cyan-800';
       }
     }
 
-    modeToggleContainer.addEventListener('click', () => {
-      setMode(activeMode === 'green' ? 'blue' : 'green');
-    });
-
-    function sendMessage() {
-      const text = messageInput.value.trim();
-      if (!text) return;
-
-      const chat = getActiveChat();
-      if (!chat) return;
-
-      const newMsg = {
-        id: 'msg_' + Date.now(),
-        mode: activeMode,
-        text: text,
-        timestamp: Date.now()
-      };
-
-      if (!chat.messages) chat.messages = [];
-      chat.messages.push(newMsg);
-      chat.updatedAt = Date.now();
-
-      // Auto-name if default name
-      if (chat.title === 'Chat Name' && chat.messages.length === 1) {
-        chat.title = text.length > 25 ? text.substring(0, 25) + '...' : text;
-        chatTitle.textContent = chat.title;
-      }
-
-      saveData();
-      renderDialogueView();
-      messageInput.value = '';
-      playTone(activeMode);
-
-      // Auto-toggle to alternate between Green and Blue for natural dialogue
-      setMode(activeMode === 'green' ? 'blue' : 'green');
-    }
-
-    function deleteMessage(msgId) {
-      const chat = getActiveChat();
-      if (!chat) return;
-      chat.messages = chat.messages.filter(m => m.id !== msgId);
-      chat.updatedAt = Date.now();
-      saveData();
-      renderDialogueView();
-    }
-
-    chatForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      sendMessage();
-    });
-
-    clearChatBtn.addEventListener('click', () => {
-      const chat = getActiveChat();
-      if (chat) {
-        chat.messages = [];
-        chat.updatedAt = Date.now();
+    document.getElementById('modalBtnDelete').addEventListener('click', () => {
+      const id = targetActionChatId;
+      closeActionSheet();
+      if (!id) return;
+      if (confirm('Are you sure you want to delete this reflection?')) {
+        appData.chats = appData.chats.filter(c => c.id !== id);
         saveData();
-        renderDialogueView();
-        showToast('Chat cleared');
+        if (appData.activeChatId === id) {
+          switchView('home');
+        } else {
+          renderHomeList();
+        }
       }
     });
 
-    // Prompts modal triggers
-    function openPrompts() {
-      promptsModal.classList.remove('hidden');
-    }
-    chatPromptsBtn.addEventListener('click', openPrompts);
-    quickPromptBtn.addEventListener('click', openPrompts);
-    closePromptsModal.addEventListener('click', () => promptsModal.classList.add('hidden'));
+    document.getElementById('modalBtnExport').addEventListener('click', () => {
+      const id = targetActionChatId;
+      closeActionSheet();
+      if (!id) return;
+      const chat = appData.chats.find(c => c.id === id);
+      if (!chat) return;
 
-    document.querySelectorAll('.prompt-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const text = card.textContent.replace(/🌱|💡|⛈️|⚓|💭|🤍|\(Green\)|\(Blue\)/g, '').trim();
-        const target = card.dataset.target;
-        promptsModal.classList.add('hidden');
+      const md = `# ${chat.title}\n*Exported on ${new Date().toLocaleDateString()}*\n\n` +
+        chat.messages.map(m => `**[${m.side.toUpperCase()}]**: ${m.text}`).join('\n\n');
 
-        if (homeView.classList.contains('hidden')) {
-          if (target) setMode(target);
-          messageInput.value = text;
-          messageInput.focus();
-        } else {
-          // If on homepage, start new chat with prompt
-          createNewChat('Reflection Prompt');
-          if (target) setMode(target);
-          messageInput.value = text;
-          messageInput.focus();
-        }
+      navigator.clipboard.writeText(md).then(() => {
+        alert('Copied reflection to clipboard!');
+      }).catch(() => {
+        prompt('Copy your reflection:', md);
       });
     });
 
-    window.addEventListener('DOMContentLoaded', () => {
-      loadSavedData();
-      renderHomepage();
-      renderDialogueView();
-      // Start in homepage view
-      navigateTo('home');
-    });
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;'
+        }[tag] || tag)
+      );
+    }
 
-    window.addEventListener('resize', () => {
-      if (!chatView.classList.contains('hidden')) {
-        renderDialogueView();
-      }
-    });
+    // Initialize App
+    loadData();
+    renderHomeList();
+    setMode('green');
   </script>
 </body>
 </html>
