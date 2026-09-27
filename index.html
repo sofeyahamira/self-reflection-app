@@ -4,32 +4,37 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Reflect - Text Yourself</title>
-  <!-- Tailwind CSS CDN -->
+
+  <!-- PWA & Favicon Metadata with relative paths for GitHub Pages subfolder compatibility -->
+  <link rel="icon" type="image/png" href="./favicon.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <link rel="manifest" href="./manifest.json">
+  <meta id="metaThemeColor" name="theme-color" content="#00bf57">
+
+  <!-- Tailwind CSS CDN configured with class-based dark mode -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            appGreen: '#00bf57',
+            appBlue: '#009abb',
+            appDarkBg: '#0b1120',
+            appDarkCard: '#1e293b',
+            appDarkSurface: '#151f32'
+          }
+        }
+      }
+    }
+  </script>
+
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="./favicon.png">
-  <link rel="apple-touch-icon" href="./icon-192.png">
-
-  <!-- PWA Manifest & Theme -->
-  <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#00bf57">
-
-  <!-- Service Worker Registration -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js', { scope: './' })
-          .then(reg => console.log('SW registered!', reg))
-          .catch(err => console.error('SW failed:', err));
-      });
-    }
-  </script>
-
   <style>
     * {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -40,13 +45,13 @@
       user-select: text;
     }
 
-    /* Screen height fixing for mobile viewports */
+    /* Fixed mobile dynamic viewport height to prevent keyboard and browser-chrome shifts */
     .app-viewport {
       height: 100vh;
       height: 100dvh;
     }
 
-    /* Safe area padding for iPhones with home bars */
+    /* Safe area padding for iPhones with notch/home bar */
     .pb-safe {
       padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
     }
@@ -54,7 +59,7 @@
       padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
     }
 
-    /* Hide standard scrollbars for a native app feel */
+    /* Hide standard scrollbars */
     .no-scrollbar::-webkit-scrollbar {
       display: none;
     }
@@ -63,7 +68,7 @@
       scrollbar-width: none;
     }
 
-    /* Smooth switch toggle transition */
+    /* Smooth toggle transitions */
     .toggle-knob {
       transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
     }
@@ -108,20 +113,26 @@
       color: #000000;
       font-weight: 500;
     }
+
+    /* Subtle theme transition */
+    .theme-transition {
+      transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+    }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-800 antialiased overflow-hidden flex justify-center selection:bg-teal-200">
 
-  <!-- Mobile Max Width Shell -->
-  <div id="appShell" class="w-full max-w-md bg-white app-viewport flex flex-col relative overflow-hidden shadow-2xl">
+<body class="bg-slate-200 dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased overflow-hidden flex justify-center selection:bg-teal-300 theme-transition">
+
+  <!-- Mobile Max Width App Shell -->
+  <div id="appShell" class="w-full max-w-md bg-white dark:bg-appDarkBg app-viewport flex flex-col relative overflow-hidden shadow-2xl border-x border-slate-200/50 dark:border-slate-800/80 theme-transition">
 
     <!-- ========================================== -->
     <!-- VIEW 1: HOME PAGE (Conversations List)    -->
     <!-- ========================================== -->
-    <section id="viewHome" class="flex-1 flex flex-col h-full bg-[#f8fafc]">
+    <section id="viewHome" class="flex-1 flex flex-col h-full bg-[#f8fafc] dark:bg-appDarkBg theme-transition">
       
       <!-- Top App Bar -->
-      <header class="px-5 pt-safe pt-4 pb-3 bg-white border-b border-slate-100 flex items-center justify-between shadow-xs">
+      <header class="px-5 pt-safe pt-4 pb-3 bg-white dark:bg-appDarkSurface border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between shadow-xs theme-transition">
         <div class="flex items-center space-x-3">
           <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-[#00bf57] to-[#009abb] flex items-center justify-center text-white shadow-sm shadow-emerald-500/20">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -129,14 +140,30 @@
             </svg>
           </div>
           <div>
-            <h1 class="text-lg font-bold tracking-tight text-slate-900 leading-none">Reflect</h1>
-            <p class="text-[11px] font-medium text-slate-400 mt-1">Dual-voice self talk</p>
+            <h1 class="text-lg font-bold tracking-tight text-slate-900 dark:text-white leading-none">Reflect</h1>
+            <p class="text-[11px] font-medium text-slate-400 dark:text-slate-400 mt-1">Dual-voice self talk</p>
           </div>
         </div>
+
+        <!-- Header Controls: Dark Mode Toggle -->
+        <button 
+          id="btnThemeToggleHome"
+          aria-label="Toggle Theme"
+          class="theme-toggle-btn w-10 h-10 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition"
+        >
+          <!-- Sun Icon (visible in dark mode) -->
+          <svg class="w-5 h-5 hidden dark:block text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <!-- Moon Icon (visible in light mode) -->
+          <svg class="w-5 h-5 block dark:hidden text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+        </button>
       </header>
 
       <!-- Search Filter Bar -->
-      <div class="px-4 py-3 bg-white border-b border-slate-100">
+      <div class="px-4 py-3 bg-white dark:bg-appDarkSurface border-b border-slate-100 dark:border-slate-800/80 theme-transition">
         <div class="relative flex items-center">
           <svg class="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -145,7 +172,7 @@
             id="searchInput" 
             type="text" 
             placeholder="Search past reflections..." 
-            class="w-full pl-9 pr-4 py-2 bg-slate-100/80 rounded-xl text-[14px] text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#009abb]/30 focus:bg-white transition-all border border-transparent focus:border-slate-200"
+            class="w-full pl-9 pr-4 py-2 bg-slate-100/90 dark:bg-slate-800/90 rounded-xl text-[14px] text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#009abb]/40 focus:bg-white dark:focus:bg-slate-800 transition-all border border-transparent focus:border-slate-200 dark:focus:border-slate-700"
           />
         </div>
       </div>
@@ -156,12 +183,12 @@
       </main>
 
       <!-- Bottom Floating New Chat Button -->
-      <div class="p-4 bg-gradient-to-t from-white via-white/95 to-transparent pb-safe border-t border-slate-100">
+      <div class="p-4 bg-gradient-to-t from-white via-white/95 dark:from-appDarkBg dark:via-appDarkBg/95 to-transparent pb-safe border-t border-slate-100 dark:border-slate-800/80 theme-transition">
         <button 
           id="btnNewReflection"
-          class="w-full py-3.5 px-5 bg-slate-900 hover:bg-slate-800 active:scale-[0.98] text-white rounded-2xl font-semibold text-sm flex items-center justify-center space-x-2 shadow-lg shadow-slate-900/10 transition-transform"
+          class="w-full py-3.5 px-5 bg-slate-900 hover:bg-slate-800 dark:bg-emerald-500 dark:hover:bg-emerald-600 active:scale-[0.98] text-white dark:text-slate-950 rounded-2xl font-semibold text-sm flex items-center justify-center space-x-2 shadow-lg shadow-slate-900/10 dark:shadow-emerald-950/20 transition-all"
         >
-          <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-5 h-5 text-emerald-400 dark:text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
           </svg>
           <span>New Reflection</span>
@@ -172,14 +199,14 @@
     <!-- ========================================== -->
     <!-- VIEW 2: ACTIVE CHAT SCREEN                 -->
     <!-- ========================================== -->
-    <section id="viewChat" class="hidden flex-1 flex-col h-full bg-white relative">
+    <section id="viewChat" class="hidden flex-1 flex-col h-full bg-white dark:bg-appDarkBg relative theme-transition">
       
       <!-- Chat Header -->
-      <header class="px-3 pt-safe pt-3 pb-2.5 bg-white/90 backdrop-blur border-b border-slate-100 flex items-center justify-between z-20">
+      <header class="px-3 pt-safe pt-3 pb-2.5 bg-white/90 dark:bg-appDarkSurface/90 backdrop-blur border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between z-20 theme-transition">
         <button 
           id="btnBackToHome" 
           aria-label="Back" 
-          class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 active:bg-slate-200 text-slate-700 transition"
+          class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 active:bg-slate-200 dark:active:bg-slate-700 text-slate-700 dark:text-slate-200 transition"
         >
           <svg class="w-6 h-6 stroke-[2.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
@@ -187,20 +214,38 @@
         </button>
 
         <div id="chatHeaderTitle" class="flex-1 text-center px-2 cursor-pointer">
-          <h2 id="activeChatTitle" class="font-bold text-slate-900 text-base leading-tight truncate">Chat Name</h2>
-          <span class="text-[11px] text-slate-400 font-medium">Tap to rename</span>
+          <h2 id="activeChatTitle" class="font-bold text-slate-900 dark:text-white text-base leading-tight truncate">Chat Name</h2>
+          <span class="text-[11px] text-slate-400 dark:text-slate-400 font-medium">Tap to rename</span>
         </div>
 
-        <!-- Chat Options Menu Button -->
-        <button 
-          id="btnChatMenu" 
-          aria-label="Options" 
-          class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 active:bg-slate-200 text-slate-700 transition"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
-          </svg>
-        </button>
+        <div class="flex items-center space-x-1">
+          <!-- Dark Mode Toggle inside Chat View -->
+          <button 
+            id="btnThemeToggleChat"
+            aria-label="Toggle Theme"
+            class="theme-toggle-btn w-9 h-9 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 active:bg-slate-200 dark:active:bg-slate-700 text-slate-600 dark:text-slate-300 transition"
+          >
+            <!-- Sun Icon (visible in dark mode) -->
+            <svg class="w-5 h-5 hidden dark:block text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            <!-- Moon Icon (visible in light mode) -->
+            <svg class="w-5 h-5 block dark:hidden text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+          </button>
+
+          <!-- Chat Options Menu Button -->
+          <button 
+            id="btnChatMenu" 
+            aria-label="Options" 
+            class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 active:bg-slate-200 dark:active:bg-slate-700 text-slate-700 dark:text-slate-200 transition"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+            </svg>
+          </button>
+        </div>
       </header>
 
       <!-- Messages Stream -->
@@ -209,7 +254,7 @@
       </main>
 
       <!-- Input Bar & Mode Toggle -->
-      <footer class="p-3 bg-white border-t border-slate-100 pb-safe">
+      <footer class="p-3 bg-white dark:bg-appDarkSurface border-t border-slate-100 dark:border-slate-800/80 pb-safe theme-transition">
         
         <!-- Perspective Switch Toggle -->
         <div class="flex items-center justify-between mb-2 px-1">
@@ -219,16 +264,16 @@
               type="button" 
               role="switch" 
               aria-checked="false" 
-              class="w-13 h-7 w-[52px] bg-[#00bf57] rounded-full p-0.5 flex items-center cursor-pointer transition-colors duration-200 relative focus:outline-none"
+              class="w-[52px] h-7 bg-[#00bf57] rounded-full p-0.5 flex items-center cursor-pointer transition-colors duration-200 relative focus:outline-none"
             >
-              <div id="toggleKnob" class="toggle-knob w-6 h-6 bg-white rounded-full shadow-md"></div>
+              <div id="toggleKnob" class="toggle-knob w-6 h-6 bg-white dark:bg-slate-100 rounded-full shadow-md"></div>
             </button>
-            <span id="modeStatusLabel" class="text-xs font-semibold text-emerald-700 uppercase tracking-wide">
+            <span id="modeStatusLabel" class="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">
               Green Mode
             </span>
           </div>
 
-          <span id="perspectiveHint" class="text-[11px] text-slate-400">
+          <span id="perspectiveHint" class="text-[11px] text-slate-400 dark:text-slate-400">
             Left / Voice 1
           </span>
         </div>
@@ -240,13 +285,13 @@
             id="messageInput" 
             autocomplete="off" 
             placeholder="Type here..." 
-            class="w-full py-3.5 pl-5 pr-12 bg-[#cbd5e1]/50 focus:bg-slate-200/80 rounded-full text-[16px] text-slate-900 placeholder-slate-500 focus:outline-none transition-all"
+            class="w-full py-3.5 pl-5 pr-12 bg-[#cbd5e1]/50 dark:bg-slate-800/80 focus:bg-slate-200/80 dark:focus:bg-slate-800 rounded-full text-[16px] text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none border border-transparent dark:border-slate-700/60 transition-all"
           />
           <button 
             type="submit" 
             id="sendBtn" 
             aria-label="Send" 
-            class="absolute right-1.5 w-9 h-9 rounded-full bg-slate-900 text-white flex items-center justify-center active:scale-95 transition-transform disabled:opacity-40"
+            class="absolute right-1.5 w-9 h-9 rounded-full bg-slate-900 dark:bg-emerald-500 text-white dark:text-slate-950 flex items-center justify-center active:scale-95 transition-transform disabled:opacity-40"
           >
             <svg class="w-4 h-4 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
@@ -259,29 +304,27 @@
     <!-- ========================================== -->
     <!-- MODALS & ACTION SHEETS                     -->
     <!-- ========================================== -->
-    
-    <!-- 3-Dots Action Sheet Modal -->
-    <div id="actionSheetModal" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-end justify-center transition-opacity">
-      <div class="w-full max-w-md bg-white rounded-t-3xl p-5 pb-safe space-y-3 animate-in fade-in slide-in-from-bottom duration-200">
-        <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-2"></div>
-        <h3 id="modalChatTitle" class="text-sm font-bold text-slate-400 uppercase tracking-wider text-center truncate">Options</h3>
+    <div id="actionSheetModal" class="hidden fixed inset-0 z-50 bg-black/50 dark:bg-black/70 backdrop-blur-xs flex items-end justify-center transition-opacity">
+      <div class="w-full max-w-md bg-white dark:bg-appDarkSurface rounded-t-3xl p-5 pb-safe space-y-3 animate-in fade-in slide-in-from-bottom duration-200 border-t border-slate-100 dark:border-slate-800">
+        <div class="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-2"></div>
+        <h3 id="modalChatTitle" class="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center truncate">Options</h3>
         
         <div class="space-y-1">
-          <button id="modalBtnRename" class="w-full py-3 px-4 rounded-xl flex items-center space-x-3 text-slate-700 hover:bg-slate-100 text-left font-medium active:bg-slate-200">
-            <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+          <button id="modalBtnRename" class="w-full py-3 px-4 rounded-xl flex items-center space-x-3 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-left font-medium active:bg-slate-200 dark:active:bg-slate-700 transition">
+            <svg class="w-5 h-5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
             <span>Rename Reflection</span>
           </button>
-          <button id="modalBtnExport" class="w-full py-3 px-4 rounded-xl flex items-center space-x-3 text-slate-700 hover:bg-slate-100 text-left font-medium active:bg-slate-200">
-            <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+          <button id="modalBtnExport" class="w-full py-3 px-4 rounded-xl flex items-center space-x-3 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-left font-medium active:bg-slate-200 dark:active:bg-slate-700 transition">
+            <svg class="w-5 h-5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
             <span>Copy as Markdown</span>
           </button>
-          <button id="modalBtnDelete" class="w-full py-3 px-4 rounded-xl flex items-center space-x-3 text-rose-600 hover:bg-rose-50 text-left font-medium active:bg-rose-100">
+          <button id="modalBtnDelete" class="w-full py-3 px-4 rounded-xl flex items-center space-x-3 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-left font-medium active:bg-rose-100 transition">
             <svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             <span>Delete Reflection</span>
           </button>
         </div>
 
-        <button id="modalBtnCancel" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl font-medium mt-2">
+        <button id="modalBtnCancel" class="w-full py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl font-medium mt-2 transition">
           Cancel
         </button>
       </div>
@@ -290,15 +333,56 @@
   </div>
 
   <script>
-    // App State Management
+    // State Keys & Storage
     const STORAGE_KEY = 'reflect_app_data_v2';
+    const THEME_KEY = 'reflect_app_theme';
+
     let appData = {
       chats: [],
       activeChatId: null,
-      currentMode: 'green' // 'green' (left) or 'blue' (right)
+      currentMode: 'green'
     };
 
     let targetActionChatId = null;
+
+    // Dark Mode Controller
+    function applyTheme(isDark) {
+      const htmlEl = document.documentElement;
+      const metaTheme = document.getElementById('metaThemeColor');
+
+      if (isDark) {
+        htmlEl.classList.add('dark');
+        localStorage.setItem(THEME_KEY, 'dark');
+        if (metaTheme) metaTheme.setAttribute('content', '#0b1120');
+      } else {
+        htmlEl.classList.remove('dark');
+        localStorage.setItem(THEME_KEY, 'light');
+        if (metaTheme) metaTheme.setAttribute('content', '#00bf57');
+      }
+    }
+
+    function initTheme() {
+      const saved = localStorage.getItem(THEME_KEY);
+      if (saved) {
+        applyTheme(saved === 'dark');
+      } else {
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        applyTheme(prefersDark);
+      }
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.contains('dark');
+      applyTheme(!isDark);
+      // Re-draw bubbles if currently in chat view to match any ambient contrast updates
+      if (!viewChat.classList.contains('hidden')) {
+        renderChatMessages();
+      }
+    }
+
+    document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+      btn.addEventListener('click', toggleTheme);
+    });
 
     // Load initial data
     function loadData() {
@@ -311,7 +395,6 @@
         }
       }
 
-      // Default sample if empty
       if (!appData.chats || appData.chats.length === 0) {
         const sampleId = 'chat_' + Date.now();
         appData.chats = [
@@ -359,7 +442,6 @@
       }
     }
 
-    // Render Home List
     function renderHomeList(filterQuery = '') {
       const container = document.getElementById('chatListContainer');
       container.innerHTML = '';
@@ -375,8 +457,8 @@
 
       if (filtered.length === 0) {
         container.innerHTML = `
-          <div class="h-64 flex flex-col items-center justify-center text-slate-400 text-center px-4">
-            <svg class="w-12 h-12 stroke-1 mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+          <div class="h-64 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 text-center px-4">
+            <svg class="w-12 h-12 stroke-1 mb-2 text-slate-300 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
             <p class="text-sm">No reflections found</p>
           </div>
         `;
@@ -389,7 +471,7 @@
         const badgeColor = lastMsg?.side === 'blue' ? 'bg-[#009abb]' : 'bg-[#00bf57]';
 
         const item = document.createElement('div');
-        item.className = 'w-full bg-white rounded-2xl p-4 border border-slate-200/70 shadow-xs flex items-center justify-between active:bg-slate-50 transition cursor-pointer';
+        item.className = 'w-full bg-white dark:bg-appDarkSurface rounded-2xl p-4 border border-slate-200/70 dark:border-slate-800 shadow-xs flex items-center justify-between active:bg-slate-50 dark:active:bg-slate-800/60 transition cursor-pointer';
         item.onclick = (e) => {
           if (e.target.closest('.menu-btn')) return;
           openChat(chat.id);
@@ -398,15 +480,15 @@
         item.innerHTML = `
           <div class="flex-1 min-w-0 pr-3">
             <div class="flex items-center justify-between mb-1">
-              <h3 class="font-bold text-slate-900 text-[15px] truncate">${chat.title || 'Untitled'}</h3>
-              <span class="text-[11px] text-slate-400 font-medium ml-2 shrink-0">${getRelativeTime(chat.updatedAt)}</span>
+              <h3 class="font-bold text-slate-900 dark:text-white text-[15px] truncate">${escapeHTML(chat.title || 'Untitled')}</h3>
+              <span class="text-[11px] text-slate-400 dark:text-slate-400 font-medium ml-2 shrink-0">${getRelativeTime(chat.updatedAt)}</span>
             </div>
             <div class="flex items-center space-x-1.5">
               <span class="w-2 h-2 rounded-full ${badgeColor} shrink-0"></span>
-              <p class="text-xs text-slate-500 truncate">${escapeHTML(lastText)}</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 truncate">${escapeHTML(lastText)}</p>
             </div>
           </div>
-          <button class="menu-btn w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 active:bg-slate-100 shrink-0">
+          <button class="menu-btn w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 active:bg-slate-100 dark:active:bg-slate-700 shrink-0 transition">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
           </button>
         `;
@@ -426,7 +508,6 @@
       switchView('chat');
     }
 
-    // SVG Bubble Generator
     function createBubbleSVG(side, width, height) {
       const radius = Math.min(height / 2, 28);
       const finW = 16;
@@ -466,7 +547,6 @@
       `;
     }
 
-    // Render Chat Messages
     function renderChatMessages() {
       const chat = appData.chats.find(c => c.id === appData.activeChatId);
       if (!chat) return;
@@ -484,7 +564,7 @@
 
         const content = document.createElement('div');
         content.className = 'bubble-content';
-        // Asymmetric horizontal padding so text centers relative to capsule body
+        // Asymmetric horizontal padding preserves central visual balance with corner fin
         if (msg.side === 'green') {
           content.style.padding = '14px 18px 14px 28px';
         } else {
@@ -496,7 +576,6 @@
         row.appendChild(wrapper);
         container.appendChild(row);
 
-        // Calculate exact dimensions for crisp vector rendering
         const updateBubble = () => {
           const w = Math.round(wrapper.offsetWidth);
           const h = Math.round(wrapper.offsetHeight);
@@ -510,13 +589,12 @@
         requestAnimationFrame(updateBubble);
       });
 
-      // Scroll to bottom
       setTimeout(() => {
         container.scrollTop = container.scrollHeight;
       }, 50);
     }
 
-    // Toggle green / blue mode
+    // Mode Toggle Switch
     const modeToggle = document.getElementById('modeToggleSwitch');
     const toggleKnob = document.getElementById('toggleKnob');
     const modeStatusLabel = document.getElementById('modeStatusLabel');
@@ -524,17 +602,18 @@
 
     function setMode(mode) {
       appData.currentMode = mode;
+      const isDark = document.documentElement.classList.contains('dark');
       if (mode === 'blue') {
         modeToggle.style.backgroundColor = '#009abb';
         toggleKnob.style.transform = 'translateX(24px)';
         modeStatusLabel.textContent = 'Blue Mode';
-        modeStatusLabel.className = 'text-xs font-semibold text-[#009abb] uppercase tracking-wide';
+        modeStatusLabel.className = `text-xs font-semibold ${isDark ? 'text-[#38bdf8]' : 'text-[#009abb]'} uppercase tracking-wide`;
         perspectiveHint.textContent = 'Right / Voice 2';
       } else {
         modeToggle.style.backgroundColor = '#00bf57';
         toggleKnob.style.transform = 'translateX(0px)';
         modeStatusLabel.textContent = 'Green Mode';
-        modeStatusLabel.className = 'text-xs font-semibold text-[#00bf57] uppercase tracking-wide';
+        modeStatusLabel.className = `text-xs font-semibold ${isDark ? 'text-[#34d399]' : 'text-[#00bf57]'} uppercase tracking-wide`;
         perspectiveHint.textContent = 'Left / Voice 1';
       }
     }
@@ -543,7 +622,6 @@
       setMode(appData.currentMode === 'green' ? 'blue' : 'green');
     });
 
-    // Send Message
     const chatForm = document.getElementById('chatForm');
     const messageInput = document.getElementById('messageInput');
 
@@ -563,7 +641,6 @@
       });
       chat.updatedAt = Date.now();
 
-      // If still named "Chat Name", auto-name it from the first line
       if (chat.title === 'Chat Name' && chat.messages.length === 1) {
         chat.title = text.length > 24 ? text.substring(0, 24) + '...' : text;
       }
@@ -571,6 +648,9 @@
       saveData();
       messageInput.value = '';
       renderChatMessages();
+
+      // Alternate voice automatically for conversational momentum
+      setMode(appData.currentMode === 'green' ? 'blue' : 'green');
     });
 
     // Navigation and Action Handlers
@@ -591,7 +671,6 @@
       switchView('chat');
     });
 
-    // Search input
     document.getElementById('searchInput').addEventListener('input', (e) => {
       renderHomeList(e.target.value);
     });
@@ -688,7 +767,17 @@
       );
     }
 
-    // Initialize App
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js', { scope: './' })
+          .then(reg => console.log('SW active:', reg))
+          .catch(err => console.warn('SW failed:', err));
+      });
+    }
+
+    // Initialize App & Theme
+    initTheme();
     loadData();
     renderHomeList();
     setMode('green');
